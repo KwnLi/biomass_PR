@@ -33,5 +33,11 @@ inga <- bm_l %>% filter(TYPE == "tree(inga?)") %>%
   select(FARM, TYPE, plantID, DBH_cm) %>%
   mutate(AGM_kg = 10^(-0.8890 + (2.317*(log10(DBH_cm)))))
 
-shrubs <- bm_l %>% filter(TYPE == "shrub" | TYPE == "Shrub") %>%
-  select(FARM, TYPE, plantID, DBH_cm)
+shrubs_trees <- bm_l %>% filter(TYPE %in% c("shrub", "Shrub", "Tree-Center", "tree", "unk.")) %>%
+  group_by(FARM, TYPE, plantID) %>%
+  summarize(totalBasal = sum(basalA), .groups = "drop") %>%
+  mutate(AGM_kg = exp(-0.535 + log10(totalBasal)))
+
+biomass_all <- bind_rows(
+  coffee, musa, citrus, inga, shrubs_trees
+)
