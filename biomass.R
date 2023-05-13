@@ -20,3 +20,18 @@ coffee <- bm_l %>% filter(TYPE == "Co") %>%
   summarize(totalBasal = sum(basalA), .groups = "drop") %>%
   mutate(AGM_kg = 0.3189*(totalBasal^0.7406))
 
+musa <- bm_l %>% filter(TYPE == "Ba") %>%
+  select(FARM, TYPE, plantID, DBH_cm) %>%
+  mutate(AGM_kg = 0.0303*(DBH_cm^2.1345))
+  
+citrus <- bm_l %>% filter(TYPE == "Citr") %>%
+  group_by(FARM, TYPE, plantID) %>%
+  summarize(totalBasal = sum(basalA), .groups = "drop") %>%
+  mutate(AGM_kg = -6.64 + (0.279*(totalBasal)) + (0.000514*(totalBasal^2)))
+
+inga <- bm_l %>% filter(TYPE == "tree(inga?)") %>%
+  select(FARM, TYPE, plantID, DBH_cm) %>%
+  mutate(AGM_kg = 10^(-0.8890 + (2.317*(log10(DBH_cm)))))
+
+shrubs <- bm_l %>% filter(TYPE == "shrub" | TYPE == "Shrub") %>%
+  select(FARM, TYPE, plantID, DBH_cm)
