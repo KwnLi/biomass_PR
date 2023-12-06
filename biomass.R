@@ -25,7 +25,8 @@ bm23_l <- bm23 %>%
   filter(!is.na(DBH_cm)) %>%
   mutate(year=2023, basalA = pi*(DBH_cm/2)^2) %>%
   rename(FARM=Farm, TYPE=Plant.Type) %>%
-  select(FARM, year, Plot, Size, plantID, TYPE, Notes, DBH_cm, basalA)
+  select(FARM, year, Plot, Size, ID, plantID, TYPE, Notes, DBH_cm, basalA) %>%
+  rename(gpsID = ID)
 
 bm_l <- bind_rows(bm22_l, bm23_l) %>%
   mutate(TYPE_clean =
@@ -35,10 +36,9 @@ bm_l <- bind_rows(bm22_l, bm23_l) %>%
              TYPE %in% c("Citr", "Ci") ~ "Ci",
              TYPE %in% c("tree(inga?)", "In") ~ "In",
              TYPE %in% c("Tr", "shrub", "Shrub", "Shrub?", "Tree-Center", "tree", "unk.") ~ "Tr"
-           ))
-
-# write out
-# write.csv(bm_l, "biomass_2022_long.csv", row.names = FALSE)
+           )) %>% 
+  # correction of plot numbers
+  mutate(Plot = ifelse(FARM=="JAYU2/3" & Plot=="Plot 1" & year == 2023, "Plot 4", Plot))
 
 # calc basal area
 coffee <- bm_l %>% filter(TYPE_clean == "Co") %>%
@@ -70,5 +70,27 @@ biomass_all <- bind_rows(
   coffee, musa, citrus, inga, shrubs_trees
 )
 
-write.csv(bm_l, "dbh_long_allyears.csv", row.names = FALSE)
-write.csv(biomass_all, "biomass_allyears.csv", row.names = FALSE)
+biomass_tot_10 <- biomass_all %>% filter(Size != "30x30") %>% select(-Size) %>%
+  group_by(FARM,year,Plot) %>%
+  summarize(AGMtot_kg = sum(AGM_kg), .groups = "drop")
+
+biomass_tot_30 <- biomass_all %>% filter(Size != "10x10") %>% select(-Size) %>%
+  group_by(FARM,year,Plot) %>%
+  summarize(AGMtot_kg = sum(AGM_kg), .groups = "drop")
+
+# check against plot polygons
+library(sf)
+plots.sf <- st_read("./data/GIS/plots_all.geojson")
+
+plots.sf.bm10 <- plots.sf %>% filter(Size == "10x10") %>%
+  left_join(biomass_tot_10) %>%
+  mutate(AGMtot_kg = ifelse(is.na(AGMtot_kg),0,AGMtot_kg))
+
+plots.sf.bm30 <- plots.sf %>% filter(Size == "30x30") %>%
+  left_join(biomass_tot_30)
+
+write.csv(bm_l, "clean_data/dbh_long_allyears.csv", row.names = FALSE)
+write.csv(biomass_all, "clean_data/biomass_allyears.csv", row.names = FALSE)
+
+st_write(plots.sf.bm10, "clean_data/biomass_plots_10.geojson")
+st_write(plots.sf.bm30, "clean_data/biomass_plots_30.geojson")
