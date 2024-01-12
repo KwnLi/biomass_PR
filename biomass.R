@@ -1,4 +1,5 @@
 library(tidyverse)
+library(egg)
 
 bm <- read.csv("biomass_2022.csv")
 
@@ -41,3 +42,14 @@ shrubs_trees <- bm_l %>% filter(TYPE %in% c("shrub", "Shrub", "Tree-Center", "tr
 biomass_all <- bind_rows(
   coffee, musa, citrus, inga, shrubs_trees
 )
+
+
+co_farm <- coffee %>% group_by(FARM) %>%
+  summarize(agm_mn = mean(AGM_kg),
+            agm_sd = sd(AGM_kg),
+            agm_n = n(),
+            agm_se = agm_sd/sqrt(agm_n))
+
+ggplot(co_farm, aes(FARM, agm_mn)) + 
+  geom_pointrange(aes(ymin = agm_mn-agm_se, ymax = agm_mn+agm_se)) +
+  theme_article()
