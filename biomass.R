@@ -94,3 +94,6 @@ write.csv(biomass_all, "clean_data/biomass_allyears.csv", row.names = FALSE)
 
 st_write(plots.sf.bm10, "clean_data/biomass_plots_10.geojson")
 st_write(plots.sf.bm30, "clean_data/biomass_plots_30.geojson")
+
+write.csv(plots.sf.bm10 %>% st_drop_geometry(), "clean_data/biomass_tot_10.csv", row.names = FALSE)
+write.csv(plots.sf.bm30 %>% st_drop_geometry(), "clean_data/biomass_tot_30.csv", row.names = FALSE)
